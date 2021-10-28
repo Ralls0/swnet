@@ -84,8 +84,10 @@ int main(int argc, char **argv) {
 	while((res = pcap_next_ex(fp, &header, &pkt_data)) >= 0)
 	{
 		eth = (struct sniff_ethernet *) pkt_data;
+		
 		/* print pkt timestamp */
 		fprintf(stdout, "%ld:%ld ", header->ts.tv_sec, header->ts.tv_usec);
+		
 		/* print pkt source mac */
 		fprintf(stdout, "%02x:%02x:%02x:%02x:%02x:%02x -> ", 
 			eth->ether_shost[0], 
@@ -111,9 +113,29 @@ int main(int argc, char **argv) {
 		if (ethtype == 0x0800) {
 			
 			ip = (struct sniff_ip *) (pkt_data + ETHER_LEN);
-			fprintf(stdout, "%d", ip->ip_src.s_b1);
+			
+			/* print pkt source ip */
+			fprintf(stdout, "%d.%d.%d.%d -> ", 
+				ip->ip_src.s_b1,
+				ip->ip_src.s_b2,
+				ip->ip_src.s_b3,
+				ip->ip_src.s_b4
+			);	
+
+			/* print pkt destination ip */
+			fprintf(stdout, "%d.%d.%d.%d ", 
+				ip->ip_dst.s_b1,
+				ip->ip_dst.s_b2,
+				ip->ip_dst.s_b3,
+				ip->ip_dst.s_b4
+			);
+
+			/* print pkt protocol */
+			fprintf(stdout, "%d ", ip->ip_p);
 
 		}
+	
+		fprintf(stdout, "\n");
 
 	}
 	
