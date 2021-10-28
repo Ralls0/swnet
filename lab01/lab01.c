@@ -1,4 +1,5 @@
 #include <stdio.h>  	// Standard C 
+#include <string.h>
 #include <pcap.h>	// libpcap/WinPcap
 
 /* Ethernet addresses are 6 bytes */
@@ -85,11 +86,13 @@ int main(int argc, char **argv) {
 	struct sniff_tcp *tcp;
 	struct sniff_udp *udp;
 	const u_char *pkt_data;
-	u_int i=0;
+	char *http_data;
+	char *token;
+	u_int i, j=0;
 	int res;
 	u_int16_t ethtype;
 	pcap_if_t *alldevsp, *temp;
-	
+				
 	if (argc != 2)
 	{	
 		fprintf(stderr, "[e] Error: invalid parameters\n");
@@ -126,27 +129,27 @@ int main(int argc, char **argv) {
 		eth = (struct sniff_ethernet *) pkt_data;
 		
 		/* print pkt timestamp */
-		fprintf(stdout, "%ld:%ld ", header->ts.tv_sec, header->ts.tv_usec);
+		// fprintf(stdout, "%ld:%ld ", header->ts.tv_sec, header->ts.tv_usec);
 		
 		/* print pkt source mac */
-		fprintf(stdout, "%02x:%02x:%02x:%02x:%02x:%02x -> ", 
+		/* fprintf(stdout, "%02x:%02x:%02x:%02x:%02x:%02x -> ", 
 			eth->ether_shost[0], 
 			eth->ether_shost[1],
 			eth->ether_shost[2],
 			eth->ether_shost[3],
 			eth->ether_shost[4],
 			eth->ether_shost[5]
-		);
+		);*/
 		
 		/* print pkt destination mac */
-		fprintf(stdout, "%02x:%02x:%02x:%02x:%02x:%02x ", 
+		/*fprintf(stdout, "%02x:%02x:%02x:%02x:%02x:%02x ", 
 			eth->ether_dhost[0], 
 			eth->ether_dhost[1],
 			eth->ether_dhost[2],
 			eth->ether_dhost[3],
 			eth->ether_dhost[4],
 			eth->ether_dhost[5]
-		);
+		);*/
 
 		ethtype = ntohs(eth->ether_type);
 
@@ -155,52 +158,79 @@ int main(int argc, char **argv) {
 			ip = (struct sniff_ip *) (pkt_data + ETHER_LEN);
 			
 			/* print pkt source ip */
-			fprintf(stdout, "%d.%d.%d.%d -> ", 
+			/*fprintf(stdout, "%d.%d.%d.%d -> ", 
 				ip->ip_src.s_b1,
 				ip->ip_src.s_b2,
 				ip->ip_src.s_b3,
 				ip->ip_src.s_b4
-			);	
+			);*/	
 
 			/* print pkt destination ip */
-			fprintf(stdout, "%d.%d.%d.%d ", 
+			/*fprintf(stdout, "%d.%d.%d.%d ", 
 				ip->ip_dst.s_b1,
 				ip->ip_dst.s_b2,
 				ip->ip_dst.s_b3,
 				ip->ip_dst.s_b4
-			);
+			);*/
 
 			/* print pkt protocol */
-			fprintf(stdout, "%d ", ip->ip_p);
+			// fprintf(stdout, "%d ", ip->ip_p);
 
 			if (ip->ip_p == 6) {
 
-			tcp = (struct sniff_tcp *)(pkt_data + ETHER_LEN + IP_LEN);
+				tcp = (struct sniff_tcp *)(pkt_data + ETHER_LEN + (ip->ip_vhl&0xF)*4);
 
-			/* print pkt TCP source port */
-			fprintf(stdout, "%d -> ", ntohs(tcp->th_sport));
-	
-			/* print pkt TCP source port */
-			fprintf(stdout, "%d -> ", ntohs(tcp->th_dport));
+				/* print pkt TCP source port */
+				// fprintf(stdout, "%d -> ", ntohs(tcp->th_sport));
+		
+				/* print pkt TCP source port */
+				// fprintf(stdout, "%d -> ", ntohs(tcp->th_dport));
+
+				if (ntohs(tcp->th_dport) == 80) {
+
+				/* 
+					HTTP TYPES:
+					"GET",
+					"HEAD",
+					"PUT",
+					"POST",
+					"DELETE",
+					"TRACE",
+					"CONNECT",
+					"OPTIONS"
+				*/
+
+					http_data = (char*)(pkt_data + ETHER_LEN + (ip->ip_vhl&0xF)*4 + (((tcp)->th_offx2 & 0xf0) >> 4)*4);
+			
+					token = strtok(http_data, " ");
+					if (token != NULL) { 
+						if (strcmp(token, "GET") == 0 || strcmp(token, "HEAD") == 0 || strcmp(token, "PUT") == 0 || strcmp(token, "POST") == 0 || strcmp(token, "DELETE") == 0 || strcmp(token, "TRACE") == 0 || strcmp(token, "CONNECT") == 0 || strcmp(token, "OPTIONS") == 0 ) {
+
+							fprintf(stdout, "%s", token);	
+					
+						}
+					}						
+
+				}
 
 			}
 
 			if (ip->ip_p == 14) {
 
-			udp = (struct sniff_udp *)(pkt_data + ETHER_LEN + IP_LEN);
+				udp = (struct sniff_udp *)(pkt_data + ETHER_LEN + (ip->ip_vhl&0xF)*4);
 
-			/* print pkt UDP source port */
-			fprintf(stdout, "%d -> ", ntohs(udp->uh_sport));
-	
-			/* print pkt UDP source port */
-			fprintf(stdout, "%d -> ", ntohs(udp->uh_dport));
-
+				/* print pkt UDP source port */
+				fprintf(stdout, "%d -> ", ntohs(udp->uh_sport));
+		
+				/* print pkt UDP source port */
+				fprintf(stdout, "%d -> ", ntohs(udp->uh_dport));
+			
 			}
 
 
 		}
 	
-		fprintf(stdout, "\n");
+		// fprintf(stdout, "\n");
 
 	}
 	
