@@ -203,12 +203,14 @@ int main(int argc, char **argv) {
 					http_data = (char*)(pkt_data + ETHER_LEN + (ip->ip_vhl&0xF)*4 + (((tcp)->th_offx2 & 0xf0) >> 4)*4);
 			
 					token = strtok(http_data, " ");
+				//	fprintf(stdout, "\n%s ^^\n", token);
 					if (token != NULL) { 
 						if (strcmp(token, "GET") == 0 || strcmp(token, "HEAD") == 0 || strcmp(token, "PUT") == 0 || strcmp(token, "POST") == 0 || strcmp(token, "DELETE") == 0 || strcmp(token, "TRACE") == 0 || strcmp(token, "CONNECT") == 0 || strcmp(token, "OPTIONS") == 0 ) {
 
-							fprintf(stdout, "%s", token);	
+							fprintf(stdout, "^^ %s", token);	
 					
 						}
+						token = NULL;
 					}						
 
 				}
