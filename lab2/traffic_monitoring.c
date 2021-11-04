@@ -7,7 +7,9 @@
  *       and the amount of traffic of L3.
  *  1.3. Define the function thet will be executed every time a packet is processed.
  * 
- */ 
+ */
+
+// Whether an error occurs add `uapi/` before of linix/
 
 // Definition of struct __sk_buff, the
 // parameter passed to our eBPF program
