@@ -5,8 +5,7 @@
  *  1.1. The headers are available in the /usr/include/linux 
  *  1.2. Define the eBPF map, that will contain the count of pkts
  *       and the amount of traffic of L3.
- * 
- * 
+ *  1.3. Define the function thet will be executed every time a packet is processed.
  * 
  */ 
 
@@ -41,6 +40,11 @@ struct l3proto_value {
 // value of type struct l3proto_value and a max size of 1024 elements
 BPF_HASH(l3protos_counter, uint16_t, struct l3proto_value, 1024);
 
+// 1.3. Define the function with a parameter of type struct __sk_buff which contain
+//      a pointer to the actual packet together with additional information.
+// 
+// NOTE: Depending on the level at which the eBPF program is attached to, some fields
+//       may not have yet been filled by the networking stack
 int monitor(struct __sk_buff *ctx) {
     // Retrieve pointers to the begin and end of the packet buffer
     void *data = (void *)(long)ctx->data;
@@ -60,8 +64,8 @@ int monitor(struct __sk_buff *ctx) {
 
     // Prepare a new entry for the map in case the protocol has not been added yet
     struct l3proto_value new_value = {
-    .count = 0,
-    .bytes = 0
+        .count = 0,
+        .bytes = 0
     };
 
     // The lookup_or_try_init is syntactic sugar provided by BCC, it looks for
